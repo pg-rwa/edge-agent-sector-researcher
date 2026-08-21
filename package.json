@@ -2,10 +2,7 @@
   "name": "edge-agent-template",
   "private": true,
   "type": "module",
-  "scripts": {
-    "build": "pnpm --filter @polytrade-edge/core build && tsc -p tsconfig.json",
-    "check": "pnpm build"
-  },
-  "dependencies": { "@polytrade-edge/core": "workspace:*" },
+  "scripts": { "build": "tsc -p tsconfig.json", "check": "tsc -p tsconfig.json --noEmit" },
+  "dependencies": { "@polytrade-edge/core": "file:./sdk" },
   "devDependencies": { "typescript": "^5.5.0" }
 }
