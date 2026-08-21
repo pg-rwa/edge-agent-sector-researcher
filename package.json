@@ -3,10 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "sdk:build": "pnpm -C sdk install --ignore-scripts && pnpm -C sdk build",
-    "build": "pnpm sdk:build && tsc -p tsconfig.json",
+    "build": "pnpm --filter @polytrade-edge/core build && tsc -p tsconfig.json",
     "check": "pnpm build"
   },
-  "dependencies": { "@polytrade-edge/core": "file:./sdk" },
+  "dependencies": { "@polytrade-edge/core": "workspace:*" },
   "devDependencies": { "typescript": "^5.5.0" }
 }
