@@ -1,0 +1,12 @@
+{
+  "name": "edge-agent-template",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sdk:build": "pnpm -C sdk install --ignore-scripts && pnpm -C sdk build",
+    "build": "pnpm sdk:build && tsc -p tsconfig.json",
+    "check": "pnpm build"
+  },
+  "dependencies": { "@polytrade-edge/core": "file:./sdk" },
+  "devDependencies": { "typescript": "^5.5.0" }
+}
