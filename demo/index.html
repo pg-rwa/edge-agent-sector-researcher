@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Research Master — Polytrade Edge</title>
+  <link rel="stylesheet" href="/demo/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">🧭</div>
+        <div>
+          <div class="brand-name">Research Master</div>
+          <div class="brand-tag">your personal research crew</div>
+        </div>
+      </div>
+
+      <div id="master-card" class="nav-card active">
+        <div class="nav-avatar master-avatar">🧭</div>
+        <div class="nav-info">
+          <div class="nav-name">Research Master</div>
+          <div class="nav-sub">mission control</div>
+        </div>
+      </div>
+
+      <div class="crew-head">
+        <span>YOUR CREW</span>
+        <span id="crew-count" class="crew-count">0</span>
+      </div>
+      <div id="roster" class="roster">
+        <div class="roster-empty" id="roster-empty">
+          No juniors yet.<br />Name a <b>geography + sector</b> in chat<br />to staff your first one.
+        </div>
+      </div>
+
+      <div class="sidebar-foot">research-only · no advice · read-only</div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-title">
+          <span class="dot"></span> research-master
+        </div>
+        <div class="topbar-pill">⚠️ personal research you request — not investment advice</div>
+      </header>
+
+      <div id="chat" class="chat"></div>
+
+      <form id="composer" class="composer">
+        <input id="input" autocomplete="off" placeholder='Try "fintech in India" or "energy in MENA"…' />
+        <button type="submit">Send ➤</button>
+      </form>
+    </main>
+  </div>
+
+  <script type="module" src="/demo/app.js"></script>
+</body>
+</html>

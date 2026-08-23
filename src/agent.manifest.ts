@@ -1,13 +1,14 @@
 import { defineAgent } from "@polytrade-edge/core";
-// A read-only "personal researcher" — needs no wallet, no fund code.
+// The Research Master: a read-only "personal researcher" that staffs junior
+// researchers on specific geography + sector beats. No wallet, no fund code.
 // This is all it takes to declare a new Edge agent.
 export default defineAgent({
-  id: "sector-researcher",
-  name: "Sector Researcher",
-  tagline: "Reads the market for you. Not advice — a research crew.",
-  icon: "🔭",
-  accent: "#4f8cff",
-  capabilities: ["read:markets", "read:exposure", "session"],
+  id: "research-master",
+  name: "Research Master",
+  tagline: "Name a beat — geography + sector — and I'll staff a junior researcher for it. Not advice — a research crew.",
+  icon: "🧭",
+  accent: "#8f6bff",
+  capabilities: ["read:markets", "read:news", "read:filings", "read:macro", "read:exposure", "session"],
   needsWallet: false,
   category: "researcher",
   sdkVersion: "0.0.1",
