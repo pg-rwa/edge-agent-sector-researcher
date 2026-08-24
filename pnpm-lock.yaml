@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       '@polytrade-edge/core':
-        specifier: file:./sdk
+        specifier: file:sdk
         version: file:sdk(typescript@5.9.3)
     devDependencies:
       '@types/node':

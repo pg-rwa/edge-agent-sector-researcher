@@ -36,7 +36,7 @@ export interface ResearchSource {
 export function sourcesFor(spec: JuniorAgentSpec, feeds?: FeedConfig): ResearchSource[] {
   const beat = spec.sector ? `${spec.geography} ${spec.sector}` : `${spec.geography} markets`;
   const feedAvailability: SourceAvailability = feeds?.baseUrl ? "live" : "needs-platform";
-  const feedWiring = "Edge platform injects a feed baseUrl at runtime (FeedConfig) — capability declared in the manifest";
+  const feedWiring = "Edge platform injects the session (FeedConfig: baseUrl + cookie) at runtime — capability declared in the manifest";
   return [
     {
       id: "hl-equity-perps",

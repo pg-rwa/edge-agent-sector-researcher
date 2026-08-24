@@ -11,7 +11,7 @@
     "ui": "pnpm build && node demo/serve.mjs"
   },
   "dependencies": {
-    "@polytrade-edge/core": "file:./sdk"
+    "@polytrade-edge/core": "file:sdk"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

@@ -149,7 +149,7 @@ export class JuniorResearcher {
     if (Array.isArray(news) && news.length > 0) {
       blocks.push(
         "*Fresh off the wire:*\n" +
-          news.slice(0, 3).map((n) => `• ${n.title} — _${n.source}, ${n.publishedAt.slice(0, 10)}_`).join("\n"),
+          news.slice(0, 3).map((n) => `• ${n.title} — _${n.source}${n.publishedAt ? `, ${n.publishedAt.slice(0, 10)}` : ""}_`).join("\n"),
       );
     }
     if (Array.isArray(filings) && filings.length > 0) {

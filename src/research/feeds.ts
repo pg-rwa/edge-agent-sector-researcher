@@ -1,22 +1,35 @@
 /**
- * Platform feed fetchers — news, filings, macro. These call HTTP endpoints
- * the Edge platform exposes to agents holding the read:news / read:filings /
- * read:macro capabilities. No endpoint configured => the fetcher refuses
- * with a clear error; a feed is "live" only when the platform wires it.
+ * Platform feed fetchers — thin adapter over the SDK's read client
+ * (`fetchNews` / `fetchFilings` / `fetchMacro` from @polytrade-edge/core),
+ * keeping this repo's internal DTOs.
  *
- * Endpoints (platform contract, v1):
- *   GET {baseUrl}/feeds/news?q=<query>&geo=<geoId>&sector=<sectorId>
- *   GET {baseUrl}/feeds/filings?geo=<geoId>&sector=<sectorId>
- *   GET {baseUrl}/feeds/macro?geo=<geoId>
- * Auth: optional Bearer key injected by the platform at runtime — never in
- * this repo, never in git.
+ * Transport (the platform contract): POST {baseUrl}/api/read/* with the
+ * calling agent identified via the `X-Edge-Agent` header and the user's
+ * session cookie forwarded for server-to-server auth. No Bearer token —
+ * the cookie comes from the platform session at runtime, never from this
+ * repo or git.
+ *
+ * Honest runtime caveat: even fully wired, these feeds are not live until
+ * the agent app and the platform run as sibling *.edge.polytrade.app
+ * subdomains with SESSION_COOKIE_DOMAIN set and /api/read/* deployed.
+ * Until then, wire + test against a mocked fetchImpl. The macro feed
+ * additionally needs FRED_API_KEY on the platform side (else it degrades
+ * to an empty list).
  */
+import {
+  fetchFilings as sdkFetchFilings,
+  fetchMacro as sdkFetchMacro,
+  fetchNews as sdkFetchNews,
+  type ReadClientConfig,
+  type ReadClientResult,
+} from "@polytrade-edge/core";
+import manifest from "../agent.manifest.js";
 
 export interface FeedConfig {
-  /** Platform feed gateway, e.g. https://edge.polytrade.example/api */
+  /** Platform origin, e.g. https://edge.polytrade.app */
   baseUrl: string;
-  /** Optional bearer token injected by the platform session. */
-  apiKey?: string;
+  /** The user's session cookie, forwarded by the platform session. */
+  cookie?: string;
   /** Injectable fetch — the platform (or tests) can supply their own. */
   fetchImpl?: typeof fetch;
 }
@@ -25,16 +38,19 @@ export interface NewsItem {
   title: string;
   source: string;
   url?: string;
-  publishedAt: string; // ISO
+  /** ISO date, or null when the source didn't provide one. */
+  publishedAt: string | null;
   summary?: string;
 }
 
 export interface FilingItem {
   title: string;
   filer: string;
+  /** The SDK's Filing DTO has no regulator field; the platform's filings
+   *  feed is SEC-backed, so it defaults to "SEC". */
   regulator: string;
   url?: string;
-  filedAt: string; // ISO
+  filedAt: string;
 }
 
 export interface MacroEvent {
@@ -44,124 +60,93 @@ export interface MacroEvent {
   expectation?: string;
 }
 
-function headers(cfg: FeedConfig): Record<string, string> {
-  return {
-    Accept: "application/json",
-    ...(cfg.apiKey ? { Authorization: `Bearer ${cfg.apiKey}` } : {}),
-  };
+function clientConfig(cfg: FeedConfig): ReadClientConfig {
+  return { baseUrl: cfg.baseUrl, agentId: manifest.id, cookie: cfg.cookie, fetchImpl: cfg.fetchImpl };
 }
 
-async function get<T>(
-  cfg: FeedConfig | undefined,
-  path: string,
-  params: Record<string, string | undefined>,
-  parse: (body: unknown) => T[],
-  fetchImpl: typeof fetch,
-): Promise<T[]> {
+/**
+ * Unwraps the SDK's typed result. 429 (rate-limited) and 502 (source
+ * unavailable) degrade to a graceful empty list; anything else throws so
+ * callers can report the failure honestly. A missing config refuses loudly.
+ */
+function unwrap<R>(result: ReadClientResult<R>, feed: string): R[] {
+  if (result.ok) return result.items;
+  if (result.status === 429 || result.status === 502) return [];
+  throw new Error(`${feed} feed failed: ${result.status} ${result.error}`);
+}
+
+function requireCfg(cfg: FeedConfig | undefined, feed: string): FeedConfig {
   if (!cfg?.baseUrl) {
-    throw new Error(`${path} feed not wired: the Edge platform must expose it (capability + baseUrl)`);
+    throw new Error(`${feed} feed not wired: the Edge platform must expose /api/read/* (capability + baseUrl)`);
   }
-  const qs = new URLSearchParams(
-    Object.entries(params).filter((e): e is [string, string] => !!e[1]),
-  );
-  const res = await fetchImpl(`${cfg.baseUrl}${path}?${qs}`, { headers: headers(cfg) });
-  if (!res.ok) throw new Error(`${path} feed failed: ${res.status}`);
-  return parse(await res.json());
+  return cfg;
 }
 
-function asString(v: unknown): string | undefined {
-  return typeof v === "string" && v.length > 0 ? v : undefined;
+/** Fold an optional sector into the SDK's free-text beat/query field. */
+function foldSector(text: string, sectorId?: string | null): string {
+  if (!sectorId) return text;
+  return text.toLowerCase().includes(sectorId.toLowerCase()) ? text : `${text} ${sectorId}`;
 }
 
-function asArray(body: unknown, key: string): unknown[] {
-  if (Array.isArray(body)) return body;
-  if (body && typeof body === "object" && Array.isArray((body as Record<string, unknown>)[key])) {
-    return (body as Record<string, unknown[]>)[key];
-  }
-  return [];
+function macroKind(eventName: string): MacroEvent["kind"] {
+  if (/rate|interest|fomc|central bank|yield/i.test(eventName)) return "rates";
+  if (/cpi|inflation|pce|price/i.test(eventName)) return "cpi";
+  if (/policy|budget|election|tariff|fiscal/i.test(eventName)) return "policy";
+  return "other";
 }
 
-export function fetchNews(
+export async function fetchNews(
   query: { q: string; geoId?: string; sectorId?: string | null },
   cfg: FeedConfig | undefined,
-  fetchImpl: typeof fetch = cfg?.fetchImpl ?? fetch,
+  fetchImpl?: typeof fetch,
 ): Promise<NewsItem[]> {
-  return get(
-    cfg,
-    "/feeds/news",
-    { q: query.q, geo: query.geoId, sector: query.sectorId ?? undefined },
-    (body) =>
-      asArray(body, "items").flatMap((raw) => {
-        const r = raw as Record<string, unknown>;
-        const title = asString(r.title);
-        const publishedAt = asString(r.publishedAt) ?? asString(r.published_at);
-        return title && publishedAt
-          ? [{
-              title,
-              source: asString(r.source) ?? "unknown",
-              url: asString(r.url),
-              publishedAt,
-              summary: asString(r.summary),
-            }]
-          : [];
-      }),
-    fetchImpl,
+  const c = requireCfg(cfg, "news");
+  const result = await sdkFetchNews(
+    { ...clientConfig(c), fetchImpl: fetchImpl ?? c.fetchImpl },
+    { beat: foldSector(query.q, query.sectorId), geography: query.geoId ?? "global" },
   );
+  return unwrap(result, "news").map((n) => ({
+    title: n.title,
+    source: n.source,
+    url: n.url,
+    publishedAt: n.publishedAt,
+    summary: n.summary || undefined,
+  }));
 }
 
-export function fetchFilings(
+export async function fetchFilings(
   query: { geoId: string; sectorId?: string | null },
   cfg: FeedConfig | undefined,
-  fetchImpl: typeof fetch = cfg?.fetchImpl ?? fetch,
+  fetchImpl?: typeof fetch,
 ): Promise<FilingItem[]> {
-  return get(
-    cfg,
-    "/feeds/filings",
-    { geo: query.geoId, sector: query.sectorId ?? undefined },
-    (body) =>
-      asArray(body, "items").flatMap((raw) => {
-        const r = raw as Record<string, unknown>;
-        const title = asString(r.title);
-        const filedAt = asString(r.filedAt) ?? asString(r.filed_at);
-        return title && filedAt
-          ? [{
-              title,
-              filer: asString(r.filer) ?? "unknown",
-              regulator: asString(r.regulator) ?? "unknown",
-              url: asString(r.url),
-              filedAt,
-            }]
-          : [];
-      }),
-    fetchImpl,
+  const c = requireCfg(cfg, "filings");
+  const result = await sdkFetchFilings(
+    { ...clientConfig(c), fetchImpl: fetchImpl ?? c.fetchImpl },
+    { query: foldSector(query.geoId, query.sectorId), geography: query.geoId },
   );
+  return unwrap(result, "filings").map((f) => ({
+    title: f.title,
+    filer: f.filer,
+    regulator: "SEC",
+    url: f.url,
+    filedAt: f.filedAt,
+  }));
 }
 
-export function fetchMacro(
+export async function fetchMacro(
   query: { geoId: string },
   cfg: FeedConfig | undefined,
-  fetchImpl: typeof fetch = cfg?.fetchImpl ?? fetch,
+  fetchImpl?: typeof fetch,
 ): Promise<MacroEvent[]> {
-  const KINDS = new Set(["rates", "cpi", "policy", "other"]);
-  return get(
-    cfg,
-    "/feeds/macro",
-    { geo: query.geoId },
-    (body) =>
-      asArray(body, "items").flatMap((raw) => {
-        const r = raw as Record<string, unknown>;
-        const name = asString(r.name);
-        const date = asString(r.date);
-        const kind = asString(r.kind);
-        return name && date
-          ? [{
-              name,
-              date,
-              kind: (KINDS.has(kind ?? "") ? kind : "other") as MacroEvent["kind"],
-              expectation: asString(r.expectation),
-            }]
-          : [];
-      }),
-    fetchImpl,
+  const c = requireCfg(cfg, "macro");
+  const result = await sdkFetchMacro(
+    { ...clientConfig(c), fetchImpl: fetchImpl ?? c.fetchImpl },
+    { region: query.geoId },
   );
+  return unwrap(result, "macro").map((m) => ({
+    name: m.event,
+    date: m.date,
+    kind: macroKind(m.event),
+    expectation: m.forecast ?? undefined,
+  }));
 }

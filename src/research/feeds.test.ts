@@ -5,17 +5,31 @@ import { JuniorResearcher } from "../junior.js";
 import { sourcesFor } from "./sources.js";
 import { fetchNews, fetchFilings, fetchMacro, type FeedConfig } from "./feeds.js";
 
-const CFG: FeedConfig = { baseUrl: "https://feeds.example", apiKey: "k" };
+const CFG: FeedConfig = { baseUrl: "https://edge.example", cookie: "sess=abc" };
 
-function fakeFetch(routes: Record<string, unknown>): typeof fetch {
+/** Fake fetch keyed on /api/read/* path; responds with the SDK's envelope. */
+function fakeFetch(routes: Record<string, { status?: number; body: unknown }>): typeof fetch {
   return (async (url: string) => {
-    for (const [path, body] of Object.entries(routes)) {
-      if (url.startsWith(`https://feeds.example${path}`)) {
-        return { ok: true, json: async () => body } as Response;
+    for (const [path, r] of Object.entries(routes)) {
+      if (url === `https://edge.example${path}`) {
+        const status = r.status ?? 200;
+        return { ok: status < 400, status, json: async () => r.body } as Response;
       }
     }
-    return { ok: false, status: 404 } as Response;
+    return { ok: false, status: 404, json: async () => ({}) } as Response;
   }) as typeof fetch;
+}
+
+function spinJunior(market = {
+  getXyzPerps: async () => ({}),
+}): { m: ResearchMaster } {
+  const m = new ResearchMaster();
+  m.handle("fintech in India");
+  m.handle("payments, NVDA");
+  m.handle("months");
+  m.handle("daily brief");
+  void market;
+  return { m };
 }
 
 test("fetchers refuse clearly when no feed config is wired", async () => {
@@ -24,45 +38,74 @@ test("fetchers refuse clearly when no feed config is wired", async () => {
   await assert.rejects(fetchMacro({ geoId: "india" }, undefined), /not wired/);
 });
 
-test("fetchNews parses items and passes geo/sector query params", async () => {
-  let seen = "";
-  const f = (async (url: string) => {
-    seen = url;
+test("fetchNews POSTs the SDK contract with agent header + session cookie", async () => {
+  let seenUrl = "";
+  let seenInit: RequestInit = {};
+  const f = (async (url: string, init: RequestInit) => {
+    seenUrl = url;
+    seenInit = init;
     return {
       ok: true,
+      status: 200,
       json: async () => ({
         items: [
-          { title: "RBI opens UPI to wallets", source: "Moneycontrol", publishedAt: "2026-08-20T09:00:00Z" },
-          { title: 42 }, // malformed — dropped
+          { title: "RBI opens UPI to wallets", url: "https://x", source: "Moneycontrol", publishedAt: "2026-08-20T09:00:00Z", summary: "s" },
+          { title: "Undated item", url: "https://y", source: "Wire", publishedAt: null, summary: "" },
         ],
       }),
     } as Response;
   }) as typeof fetch;
   const items = await fetchNews({ q: "fintech", geoId: "india", sectorId: "fintech" }, CFG, f);
-  assert.equal(items.length, 1);
+
+  assert.equal(seenUrl, "https://edge.example/api/read/news");
+  assert.equal(seenInit.method, "POST");
+  const headers = seenInit.headers as Record<string, string>;
+  assert.equal(headers["X-Edge-Agent"], "research-master");
+  assert.equal(headers["Cookie"], "sess=abc");
+  // sector folds into the free-text beat, geo maps to geography
+  const body = JSON.parse(seenInit.body as string);
+  assert.equal(body.beat, "fintech"); // already contains the sector — not duplicated
+  assert.equal(body.geography, "india");
+
+  assert.equal(items.length, 2);
   assert.equal(items[0].title, "RBI opens UPI to wallets");
-  assert.match(seen, /q=fintech/);
-  assert.match(seen, /geo=india/);
-  assert.match(seen, /sector=fintech/);
+  assert.equal(items[1].publishedAt, null); // null dates pass through
 });
 
-test("fetchFilings and fetchMacro parse their shapes", async () => {
+test("fetchNews folds a distinct sector into the beat", async () => {
+  let body: { beat?: string } = {};
+  const f = (async (_url: string, init: RequestInit) => {
+    body = JSON.parse(init.body as string);
+    return { ok: true, status: 200, json: async () => ({ items: [] }) } as Response;
+  }) as typeof fetch;
+  await fetchNews({ q: "payments", geoId: "india", sectorId: "fintech" }, CFG, f);
+  assert.equal(body.beat, "payments fintech");
+});
+
+test("fetchFilings and fetchMacro map SDK DTOs, deriving the gaps", async () => {
   const f = fakeFetch({
-    "/feeds/filings": { items: [{ title: "Q1 results", filer: "Paytm", regulator: "SEBI", filedAt: "2026-08-19" }] },
-    "/feeds/macro": { items: [{ name: "RBI rate decision", date: "2026-09-01", kind: "rates", expectation: "hold" }] },
+    "/api/read/filings": { body: { items: [{ form: "10-Q", filer: "Paytm", filedAt: "2026-08-19", url: "https://z", title: "Q1 results" }] } },
+    "/api/read/macro": { body: { items: [{ event: "RBI rate decision", region: "india", date: "2026-09-01", value: null, previous: null, forecast: "hold", seriesId: "X" }] } },
   });
   const filings = await fetchFilings({ geoId: "india" }, CFG, f);
-  assert.equal(filings[0].regulator, "SEBI");
+  assert.equal(filings[0].regulator, "SEC"); // derived — the DTO has no regulator field
+  assert.equal(filings[0].title, "Q1 results");
   const macro = await fetchMacro({ geoId: "india" }, CFG, f);
-  assert.equal(macro[0].kind, "rates");
+  assert.equal(macro[0].kind, "rates"); // derived from the event name
+  assert.equal(macro[0].expectation, "hold"); // forecast -> expectation
+});
+
+test("429/502 degrade to a graceful empty list, other failures throw", async () => {
+  const limited = fakeFetch({ "/api/read/news": { status: 429, body: { error: "rate_limited", resetAt: 123 } } });
+  assert.deepEqual(await fetchNews({ q: "x" }, CFG, limited), []);
+  const down = fakeFetch({ "/api/read/macro": { status: 502, body: { error: "source_unavailable" } } });
+  assert.deepEqual(await fetchMacro({ geoId: "india" }, CFG, down), []);
+  const forbidden = fakeFetch({ "/api/read/filings": { status: 403, body: { error: "capability_not_granted" } } });
+  await assert.rejects(fetchFilings({ geoId: "india" }, CFG, forbidden), /403/);
 });
 
 test("sources flip to live when a FeedConfig is wired, and name their fetcher", () => {
-  const m = new ResearchMaster();
-  m.handle("fintech in India");
-  m.handle("payments");
-  m.handle("months");
-  m.handle("daily brief");
+  const { m } = spinJunior();
   const spec = m.crew()[0];
 
   const offline = sourcesFor(spec);
@@ -78,17 +121,13 @@ test("sources flip to live when a FeedConfig is wired, and name their fetcher", 
 });
 
 test("deep dive includes wire/filings/macro sections when feeds are live", async () => {
-  const m = new ResearchMaster();
-  m.handle("fintech in India");
-  m.handle("payments, NVDA");
-  m.handle("months");
-  m.handle("daily brief");
+  const { m } = spinJunior();
   const cfg: FeedConfig = {
-    baseUrl: "https://feeds.example",
+    baseUrl: "https://edge.example",
     fetchImpl: fakeFetch({
-      "/feeds/news": { items: [{ title: "RBI opens UPI to wallets", source: "Moneycontrol", publishedAt: "2026-08-20T09:00:00Z" }] },
-      "/feeds/filings": { items: [{ title: "Q1 results", filer: "Paytm", regulator: "SEBI", filedAt: "2026-08-19" }] },
-      "/feeds/macro": { items: [{ name: "RBI rate decision", date: "2026-09-01", kind: "rates", expectation: "hold" }] },
+      "/api/read/news": { body: { items: [{ title: "RBI opens UPI to wallets", url: "https://x", source: "Moneycontrol", publishedAt: "2026-08-20T09:00:00Z", summary: "" }] } },
+      "/api/read/filings": { body: { items: [{ form: "10-Q", filer: "Paytm", filedAt: "2026-08-19", url: "https://z", title: "Q1 results" }] } },
+      "/api/read/macro": { body: { items: [{ event: "RBI rate decision", region: "india", date: "2026-09-01", value: null, previous: null, forecast: "hold", seriesId: "X" }] } },
     }),
   };
   const j = new JuniorResearcher(
@@ -104,24 +143,19 @@ test("deep dive includes wire/filings/macro sections when feeds are live", async
   assert.match(r.text, /Fresh off the wire/);
   assert.match(r.text, /RBI opens UPI to wallets/);
   assert.match(r.text, /Latest filings/);
-  assert.match(r.text, /Paytm → SEBI/);
+  assert.match(r.text, /Paytm → SEC/);
   assert.match(r.text, /Macro calendar/);
   assert.match(r.text, /RBI rate decision/);
   assert.match(r.text, /🟢 live now/);
-  assert.match(r.text, /news wire/);
   assert.doesNotMatch(r.text, /unreachable/);
 });
 
 test("deep dive reports a failing feed instead of hiding it", async () => {
-  const m = new ResearchMaster();
-  m.handle("fintech in India");
-  m.handle("payments");
-  m.handle("months");
-  m.handle("daily brief");
+  const { m } = spinJunior();
   const cfg: FeedConfig = {
-    baseUrl: "https://feeds.example",
+    baseUrl: "https://edge.example",
     fetchImpl: fakeFetch({
-      "/feeds/news": { items: [{ title: "RBI opens UPI to wallets", source: "Moneycontrol", publishedAt: "2026-08-20T09:00:00Z" }] },
+      "/api/read/news": { body: { items: [{ title: "RBI opens UPI to wallets", url: "https://x", source: "Moneycontrol", publishedAt: "2026-08-20T09:00:00Z", summary: "" }] } },
       // filings + macro 404
     }),
   };
