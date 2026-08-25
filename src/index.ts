@@ -9,6 +9,7 @@ export { JuniorResearcher } from "./junior.js";
 export { fetchNews, fetchFilings, fetchMacro } from "./research/feeds.js";
 export type { FeedConfig, NewsItem, FilingItem, MacroEvent } from "./research/feeds.js";
 export { sourcesFor } from "./research/sources.js";
+export { feedConfigFromEnv } from "./research/config.js";
 export { buildAgenda } from "./research/plan.js";
 export { snapshotTickers, extractTickers } from "./research/market-data.js";
 export { GEOGRAPHIES, SECTORS } from "./taxonomy.js";

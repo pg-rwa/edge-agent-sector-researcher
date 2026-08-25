@@ -1,5 +1,6 @@
 import { ResearchMaster } from "/dist/master.js";
 import { JuniorResearcher } from "/dist/junior.js";
+import { MOCK_FEEDS } from "/demo/mock-feeds.js";
 
 const master = new ResearchMaster();
 
@@ -272,7 +273,7 @@ async function send(text) {
   // did the master spin anyone up?
   for (const spec of master.crew()) {
     if (before.has(spec.id)) continue;
-    const persona = new JuniorResearcher(spec);
+    const persona = new JuniorResearcher(spec, undefined, MOCK_FEEDS);
     juniors.set(spec.id, { persona, face: persona.face, hasNew: false });
     conversations.set(spec.id, []);
     conversations.get(spec.id).push({ who: "master", reply: persona.greeting() });

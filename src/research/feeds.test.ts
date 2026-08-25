@@ -4,6 +4,7 @@ import { ResearchMaster } from "../master.js";
 import { JuniorResearcher } from "../junior.js";
 import { sourcesFor } from "./sources.js";
 import { fetchNews, fetchFilings, fetchMacro, type FeedConfig } from "./feeds.js";
+import { feedConfigFromEnv } from "./config.js";
 
 const CFG: FeedConfig = { baseUrl: "https://edge.example", cookie: "sess=abc" };
 
@@ -102,6 +103,19 @@ test("429/502 degrade to a graceful empty list, other failures throw", async () 
   assert.deepEqual(await fetchMacro({ geoId: "india" }, CFG, down), []);
   const forbidden = fakeFetch({ "/api/read/filings": { status: 403, body: { error: "capability_not_granted" } } });
   await assert.rejects(fetchFilings({ geoId: "india" }, CFG, forbidden), /403/);
+});
+
+test("feedConfigFromEnv resolves the platform session or stays undefined", () => {
+  assert.equal(feedConfigFromEnv({}), undefined);
+  assert.deepEqual(feedConfigFromEnv({ EDGE_PLATFORM_URL: "https://edge.example" }), {
+    baseUrl: "https://edge.example",
+    cookie: undefined,
+  });
+  const cfg = feedConfigFromEnv(
+    { EDGE_PLATFORM_URL: "https://edge.example", EDGE_SESSION_COOKIE: "env-cookie" },
+    "arg-cookie",
+  );
+  assert.equal(cfg?.cookie, "arg-cookie"); // explicit per-request cookie wins
 });
 
 test("sources flip to live when a FeedConfig is wired, and name their fetcher", () => {
