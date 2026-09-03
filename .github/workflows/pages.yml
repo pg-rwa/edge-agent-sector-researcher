@@ -1,0 +1,33 @@
+# Deploys the static demo (landing + crew chat) to GitHub Pages.
+# Deliberately checks out WITHOUT submodules: the sdk/ submodule is a private
+# repo the Pages runner can't clone, and the demo only needs its vendored
+# copies under demo/vendor/ (regenerated with `pnpm sync:demo`).
+name: Deploy demo to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4 # submodules: false (the default) is required
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
