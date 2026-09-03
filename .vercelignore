@@ -1,0 +1,14 @@
+# Vercel uses THIS file instead of .gitignore when it exists. The static demo
+# only needs index.html + demo/ (vendored modules included); skip everything
+# else, including the sdk/ submodule (the demo uses demo/vendor copies).
+node_modules
+sdk
+src
+dist
+.git
+.github
+.env
+.env.local
+*.md
+pnpm-lock.yaml
+tsconfig.json

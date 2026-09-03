@@ -2,3 +2,4 @@ node_modules
 dist
 sdk/dist
 sdk/node_modules
+.vercel
