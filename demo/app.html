@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Research Master — Crew Chat</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="importmap">
+    { "imports": { "@polytrade-edge/core": "./sdk-shim.js" } }
+  </script>
+</head>
+<body>
+  <div id="gate" class="gate" style="display:none">
+    <div class="gate-card">
+      <div class="gate-icon">🧭</div>
+      <h2>Members' research desk</h2>
+      <p>The Research Master is gated behind your <b>Polytrade Edge</b> account.
+        Sign in on the portal — your session carries straight through, no second login.</p>
+      <a class="gate-btn" href="https://edge.polytrade.app">Sign in on edge.polytrade.app ➤</a>
+      <button id="gate-demo" class="gate-demo" style="display:none" type="button">Continue with a demo session (localhost only)</button>
+      <p class="gate-fine">personal research you request — not investment advice</p>
+    </div>
+  </div>
+  <div class="app" style="visibility:hidden">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">🧭</div>
+        <div>
+          <div class="brand-name">Research Master</div>
+          <div class="brand-tag">your personal research crew</div>
+        </div>
+      </div>
+
+      <div id="master-card" class="nav-card active">
+        <div class="nav-avatar master-avatar">🧭</div>
+        <div class="nav-info">
+          <div class="nav-name">Research Master</div>
+          <div class="nav-sub">mission control</div>
+        </div>
+      </div>
+
+      <div class="crew-head">
+        <span>YOUR CREW</span>
+        <span id="crew-count" class="crew-count">0</span>
+      </div>
+      <div id="roster" class="roster">
+        <div class="roster-empty" id="roster-empty">
+          No juniors yet.<br />Name a <b>geography + sector</b> in chat<br />to staff your first one.
+        </div>
+      </div>
+
+      <div class="sidebar-foot">research-only · no advice · read-only</div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-title">
+          <span class="dot"></span> research-master
+        </div>
+        <div class="topbar-right">
+          <span id="topbar-user" class="topbar-user"></span>
+          <div class="topbar-pill">⚠️ personal research you request — not investment advice</div>
+        </div>
+      </header>
+
+      <div id="chat" class="chat"></div>
+
+      <form id="composer" class="composer">
+        <input id="input" autocomplete="off" placeholder='Try "fintech in India" or "energy in MENA"…' />
+        <button type="submit">Send ➤</button>
+      </form>
+    </main>
+  </div>
+
+  <script type="module" src="./auth-gate.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -3,58 +3,111 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Research Master — Polytrade Edge</title>
-  <link rel="stylesheet" href="/demo/styles.css" />
+  <title>Research Master — your personal research crew · Polytrade Edge</title>
+  <meta name="description" content="Name a beat — a geography + a sector — and the Research Master staffs a dedicated junior researcher for it. Personal research you request, never investment advice." />
+  <link rel="stylesheet" href="demo/landing.css" />
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-icon">🧭</div>
-        <div>
-          <div class="brand-name">Research Master</div>
-          <div class="brand-tag">your personal research crew</div>
-        </div>
+  <nav class="nav">
+    <div class="nav-brand"><span class="compass">🧭</span> Research Master <span style="color:var(--muted);font-weight:400">· Polytrade Edge</span></div>
+    <div class="nav-actions">
+      <a class="nav-signin" href="https://edge.polytrade.app">Sign in</a>
+      <a class="nav-cta" href="demo/app.html">Launch the crew ➤</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <span class="pill">⚠️ personal research you request — not investment advice</span>
+      <h1>Don't research everything.<br />Staff a <span class="underline">junior who goes deep</span> on your beat.</h1>
+      <p class="hero-sub">
+        Tell the Research Master a <b>geography</b> + a <b>sector</b> — "fintech in India", "energy in MENA" —
+        and it spins up a dedicated junior researcher who lives and breathes exactly that:
+        the players, the regulation, the data, the narrative. One junior per beat, as many beats as you like.
+      </p>
+      <div class="hero-actions">
+        <a class="btn-primary" href="demo/app.html">Staff your first junior 🧭</a>
+        <a class="btn-ghost" href="#how">How it works</a>
       </div>
+      <p class="gate-note">🔒 Gated for Edge members — sign in on <b>edge.polytrade.app</b> once, your session carries straight through.</p>
+    </div>
+    <div class="hero-visual" aria-hidden="true">
+      <div class="blob">🧭</div>
+      <div class="orbit"><div class="sat" style="transform: translate(-50%, -50%) translateX(150px)">🦊</div></div>
+      <div class="orbit"><div class="sat" style="transform: translate(-50%, -50%) translateX(-150px)">🦉</div></div>
+      <div class="orbit"><div class="sat" style="transform: translate(-50%, -50%) translateY(150px)">🐙</div></div>
+    </div>
+  </header>
 
-      <div id="master-card" class="nav-card active">
-        <div class="nav-avatar master-avatar">🧭</div>
-        <div class="nav-info">
-          <div class="nav-name">Research Master</div>
-          <div class="nav-sub">mission control</div>
-        </div>
+  <section class="beats" id="beats">
+    <h2>Reachable in one click</h2>
+    <p class="section-sub">Every beat is a link. Pick one — you'll land straight in the intake for that junior.</p>
+    <div class="beat-grid">
+      <a class="beat-chip" href="demo/app.html?beat=fintech%20in%20India">🇮🇳 Fintech in India <span class="arrow">➤</span></a>
+      <a class="beat-chip" href="demo/app.html?beat=energy%20in%20MENA">🌍 Energy in MENA <span class="arrow">➤</span></a>
+      <a class="beat-chip" href="demo/app.html?beat=AI%20%26%20tech%20in%20the%20US">🇺🇸 AI &amp; Tech in the US <span class="arrow">➤</span></a>
+      <a class="beat-chip" href="demo/app.html?beat=crypto%20RWA%20in%20Europe">🇪🇺 Crypto &amp; RWA in Europe <span class="arrow">➤</span></a>
+      <a class="beat-chip" href="demo/app.html?beat=biotech%20in%20Japan">🇯🇵 Biotech in Japan <span class="arrow">➤</span></a>
+      <a class="beat-chip" href="demo/app.html?beat=consumer%20in%20Southeast%20Asia">🌏 Consumer in SE Asia <span class="arrow">➤</span></a>
+      <a class="beat-chip" href="demo/app.html?beat=defense%20in%20the%20US">🛰️ Defense in the US <span class="arrow">➤</span></a>
+      <a class="beat-chip" href="demo/app.html?beat=real%20estate%20in%20Latin%20America">🌎 Real Estate in LatAm <span class="arrow">➤</span></a>
+    </div>
+  </section>
+
+  <section class="steps" id="how">
+    <h2>How it works</h2>
+    <p class="section-sub">Three steps from curiosity to a staffed research desk.</p>
+    <div class="step-grid">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Name a beat 🎯</h3>
+        <p>A geography + a sector. Ask for a "general researcher" and the Master politely refuses — a junior that covers everything knows nothing. Geography-only gets a generalist, with a clear no-sector-depth warning.</p>
       </div>
-
-      <div class="crew-head">
-        <span>YOUR CREW</span>
-        <span id="crew-count" class="crew-count">0</span>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Sharp intake 🧵</h3>
+        <p>Three quick asks — your focus themes or tickers, your time horizon, your reporting cadence — so the junior comes out crisp about exactly what you asked for. Watch it hatch, absorb its knowledge, and fly into your nav.</p>
       </div>
-      <div id="roster" class="roster">
-        <div class="roster-empty" id="roster-empty">
-          No juniors yet.<br />Name a <b>geography + sector</b> in chat<br />to staff your first one.
-        </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Deep dives on demand 📊</h3>
+        <p>Chat with each junior directly: live market reads on verified tickers, a research agenda built from your brief, and news / filings / macro feeds as the platform lights them up. Every source's wiring is stated honestly.</p>
       </div>
+    </div>
+  </section>
 
-      <div class="sidebar-foot">research-only · no advice · read-only</div>
-    </aside>
+  <section class="features">
+    <h2>Under the hood</h2>
+    <p class="section-sub">Built on the audited Polytrade Edge capability layer.</p>
+    <div class="feature-grid">
+      <div class="feature">
+        <span class="f-icon">🟢</span>
+        <h3>Live market data</h3>
+        <p>Real Hyperliquid equity-perp reads — oracle price, funding, leverage — for tokens in the SDK's verified registry only. Impersonator tokens never get quoted.</p>
+      </div>
+      <div class="feature">
+        <span class="f-icon">📰</span>
+        <h3>News, filings &amp; macro feeds</h3>
+        <p>Wired to the platform's read capability API (read:news / read:filings / read:macro). Juniors report each feed's status plainly — live, needs a key, or waiting on the platform.</p>
+      </div>
+      <div class="feature">
+        <span class="f-icon">🧭</span>
+        <h3>Read-only by design</h3>
+        <p>No wallet, no keys, no fund movement — ever. The crew reads the market for you; anything that moves value stays in your hands on the Edge platform.</p>
+      </div>
+      <div class="feature">
+        <span class="f-icon">🛡️</span>
+        <h3>Honest about its limits</h3>
+        <p>No fake numbers. A down feed is reported as unreachable, an unwired source as pending, and a generalist junior as having no sector depth. Research is labeled research — never advice.</p>
+      </div>
+    </div>
+  </section>
 
-    <main class="main">
-      <header class="topbar">
-        <div class="topbar-title">
-          <span class="dot"></span> research-master
-        </div>
-        <div class="topbar-pill">⚠️ personal research you request — not investment advice</div>
-      </header>
-
-      <div id="chat" class="chat"></div>
-
-      <form id="composer" class="composer">
-        <input id="input" autocomplete="off" placeholder='Try "fintech in India" or "energy in MENA"…' />
-        <button type="submit">Send ➤</button>
-      </form>
-    </main>
-  </div>
-
-  <script type="module" src="/demo/app.js"></script>
+  <footer>
+    <div class="disclaimer">
+      ⚠️ The Research Master and its juniors produce <b>personal research you explicitly request</b> — impersonal analysis, scenarios, and source material. This is <b>not investment advice</b>, not a recommendation, and not an offer. Always do your own due diligence.
+    </div>
+    <div>Research Master · a Polytrade Edge agent · research-only · read-only</div>
+  </footer>
 </body>
 </html>

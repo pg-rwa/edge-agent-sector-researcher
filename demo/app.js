@@ -1,6 +1,6 @@
-import { ResearchMaster } from "/dist/master.js";
-import { JuniorResearcher } from "/dist/junior.js";
-import { MOCK_FEEDS } from "/demo/mock-feeds.js";
+import { ResearchMaster } from "./vendor/agent/master.js";
+import { JuniorResearcher } from "./vendor/agent/junior.js";
+import { MOCK_FEEDS } from "./mock-feeds.js";
 
 const master = new ResearchMaster();
 
@@ -241,7 +241,7 @@ async function birthSequence(spec) {
 
 // --- confetti ---------------------------------------------------------------
 function confetti() {
-  const colors = ["#8f6bff", "#43d98a", "#ffc442", "#ff6b9e", "#4fc3f7"];
+  const colors = ["#1f5c40", "#e8b93e", "#c4552c", "#3d8a63", "#f3d688"];
   for (let i = 0; i < 60; i++) {
     const bit = document.createElement("div");
     bit.className = "confetti";
@@ -293,3 +293,10 @@ form.onsubmit = (e) => {
 conversations.get("master").push({ who: "master", reply: master.greeting() });
 renderConversation();
 input.focus();
+
+// Deep link from the landing page: /demo/app.html?beat=fintech%20in%20india
+// drops the user straight into that junior's intake.
+const requestedBeat = new URLSearchParams(location.search).get("beat");
+if (requestedBeat) {
+  setTimeout(() => send(requestedBeat), 600);
+}

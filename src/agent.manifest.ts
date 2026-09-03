@@ -7,7 +7,7 @@ export default defineAgent({
   name: "Research Master",
   tagline: "Name a beat — geography + sector — and I'll staff a junior researcher for it. Not advice — a research crew.",
   icon: "🧭",
-  accent: "#8f6bff",
+  accent: "#1f5c40",
   capabilities: ["read:markets", "read:news", "read:filings", "read:macro", "read:exposure", "session"],
   needsWallet: false,
   category: "researcher",

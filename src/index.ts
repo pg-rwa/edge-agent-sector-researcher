@@ -6,6 +6,8 @@ export { default as manifest } from "./agent.manifest.js";
 export { ResearchMaster, NOT_ADVICE } from "./master.js";
 export type { Reply, JuniorAgentSpec } from "./master.js";
 export { JuniorResearcher } from "./junior.js";
+export { fetchEdgeSession } from "./session.js";
+export type { EdgeSession } from "./session.js";
 export { fetchNews, fetchFilings, fetchMacro } from "./research/feeds.js";
 export type { FeedConfig, NewsItem, FilingItem, MacroEvent } from "./research/feeds.js";
 export { sourcesFor } from "./research/sources.js";
