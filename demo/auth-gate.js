@@ -15,12 +15,15 @@ const PLATFORM_URL = "https://edge.polytrade.app";
 
 const gate = document.getElementById("gate");
 const appEl = document.querySelector(".app");
-const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname);
+// Demo bypass is offered only where no portal session can exist: local dev
+// and the public GitHub Pages demo. On a real *.edge.polytrade.app
+// deployment it never renders — the portal session is the only way in.
+const isDemoHost = ["localhost", "127.0.0.1"].includes(location.hostname) || location.hostname.endsWith(".github.io");
 
 function showGate() {
   gate.style.display = "grid";
   appEl.style.visibility = "hidden";
-  if (isLocal) document.getElementById("gate-demo").style.display = "inline-block";
+  if (isDemoHost) document.getElementById("gate-demo").style.display = "inline-block";
 }
 
 function unlock(session) {
