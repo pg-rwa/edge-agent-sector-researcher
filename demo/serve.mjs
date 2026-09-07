@@ -17,7 +17,7 @@ const MIME = {
 createServer(async (req, res) => {
   try {
     let path = normalize(decodeURIComponent(new URL(req.url, "http://x").pathname));
-    if (path === "/" || path === "\\") path = "/demo/index.html";
+    if (path === "/" || path === "\\") path = "/index.html"; // root redirect → /demo/ (same as production)
     const file = join(root, path);
     if (!file.startsWith(root)) throw new Error("nope");
     const body = await readFile(file);
